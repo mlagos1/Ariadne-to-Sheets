@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>⚽ Ariadne → Sheet</title>
+<style>
+  :root{
+    --primary:#16a34a; --dark:#14532d; --light:#f0fdf4;
+    --bg:#f8fafc; --card:#ffffff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b;
+    --bar:#eef2f5; --gray:#cdd4d7;
+    --cell:#f8d469; --cell-edge:#dcae28; --cell-soft:#fcecb6; --cell-ink:#2c2200;
+    --ok-bg:#ecfdf5; --ok-tx:#065f46; --ok-bd:#a7f3d0;
+    --warn-bg:#fffbeb; --warn-tx:#92400e; --warn-bd:#fde68a;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  body.dark{
+    --primary:#16a34a; --dark:#15803d; --light:#14532d33;
+    --bg:#0f1117; --card:#1a1d27; --border:#2d3148; --text:#e2e8f0; --muted:#94a3b8;
+    --bar:#13161f; --gray:#2d3148;
+    --cell:#caa83a; --cell-edge:#8a7320; --cell-soft:#6f5d22; --cell-ink:#1a1404;
+    --ok-bg:#1e2a1e; --ok-tx:#86efac; --ok-bd:#166534;
+    --warn-bg:#1c1a10; --warn-tx:#ca8a04; --warn-bd:#3d3510;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.5;
+    padding:14px 18px 36px;font-size:14px;-webkit-font-smoothing:antialiased}
+  .container{max-width:1100px;margin:0 auto}
+
+  header{background:linear-gradient(135deg,var(--primary),var(--dark));color:#fff;padding:14px 20px;
+    border-radius:12px;margin-bottom:12px;box-shadow:0 4px 12px rgba(20,83,45,.2);
+    display:flex;align-items:center;justify-content:space-between;gap:16px}
+  header .title-block h1{font-size:1.35rem;font-weight:700;letter-spacing:-.01em}
+  header .title-block .subtitle{font-size:.8rem;opacity:.9;margin-top:2px}
+  .head-right{display:flex;align-items:center;gap:8px}
+  .badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+    padding:3px 9px;border-radius:999px;font-size:.66rem;font-weight:700;letter-spacing:.1em}
+  .dark-toggle{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;
+    padding:5px 11px;border-radius:999px;font-size:.74rem;font-weight:700;cursor:pointer;
+    transition:background .15s;letter-spacing:.03em}
+  .dark-toggle:hover{background:rgba(255,255,255,.22)}
+
+  .banner{background:linear-gradient(90deg,var(--primary),var(--dark));color:#fff;padding:8px 16px;
+    border-radius:9px;font-weight:700;font-size:.76rem;text-align:center;letter-spacing:.04em;margin-bottom:12px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .card h2{font-size:.92rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;color:var(--text)}
+  .card h2 .step-num{background:var(--light);color:var(--primary);border:1px solid var(--primary);
+    border-radius:999px;padding:1px 9px;font-size:.7rem;font-weight:800}
+  body.dark .card h2 .step-num{color:#86efac;border-color:#166534;background:#1e2a1e}
+  .card h2 .spacer{flex:1}
+
+  textarea{width:100%;min-height:300px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+    font-family:var(--mono);font-size:12.5px;resize:vertical;outline:none;transition:border-color .15s;
+    background:var(--card);color:var(--text);line-height:1.5}
+  textarea:focus{border-color:var(--primary)}
+  textarea::placeholder{color:var(--muted)}
+
+  .meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:9px}
+  .chip{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bar);
+    border:1px solid var(--border);padding:3px 8px;border-radius:999px}
+  .chip.warn{color:var(--warn-tx);border-color:var(--warn-bd);background:var(--warn-bg)}
+  .chip.good{color:var(--ok-tx);border-color:var(--ok-bd);background:var(--ok-bg)}
+
+  .seg{display:inline-flex;gap:6px}
+  .seg button{border:1px solid var(--border);border-radius:7px;padding:6px 12px;background:var(--card);
+    color:var(--text);font-weight:600;cursor:pointer;font-family:var(--sans);font-size:.85rem;transition:all .12s}
+  .seg button:hover{border-color:var(--primary)}
+  .seg button.on{border-color:var(--primary);background:var(--light);color:var(--dark);
+    box-shadow:0 0 0 2px rgba(22,163,74,.15)}
+  body.dark .seg button.on{color:#86efac;background:#1e2a1e}
+
+  .block{border:1px solid var(--border);border-radius:10px;margin-bottom:11px;overflow:hidden}
+  .block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;
+    background:var(--bar);border-bottom:1px solid var(--border)}
+  .anchor{font-family:var(--mono);font-size:12px;color:var(--text)}
+  .anchor b{color:var(--primary);font-size:13px}
+  body.dark .anchor b{color:#86efac}
+  .dim{color:var(--muted)}
+
+  table.bt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+  table.bt td{border:1px solid var(--cell-edge);padding:8px 12px;text-align:left;white-space:nowrap;
+    background:var(--cell);color:var(--cell-ink);font-weight:700}
+  table.bt td.bl{background:var(--cell-soft)}
+  table.bt tr.hdr td{background:var(--gray);border-color:var(--border);color:var(--text);font-weight:700}
+
+  button{font-family:var(--sans);font-size:.86rem;font-weight:600;cursor:pointer;border:1px solid var(--border);
+    background:var(--bar);color:var(--text);padding:7px 13px;border-radius:8px;transition:all .12s}
+  button:hover{filter:brightness(.97)} button:active{transform:translateY(1px)}
+  .copy{background:linear-gradient(135deg,var(--primary),var(--dark));color:#fff;border:none;font-weight:700}
+  .copy:hover{box-shadow:0 4px 12px rgba(22,163,74,.32);filter:none}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+  .pill{margin-top:9px;padding:7px 12px;border-radius:8px;font-size:.8rem;font-weight:600;display:none}
+  .pill.ok{display:block;background:var(--ok-bg);color:var(--ok-tx);border:1px solid var(--ok-bd)}
+  .pill.err{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+  body.dark .pill.err{background:#1e1010;color:#fca5a5;border-color:#7f1d1d}
+  .hint{color:var(--muted);font-size:12px;margin-top:10px}
+
+  table.pv{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;margin-top:14px}
+  table.pv th,table.pv td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--border)}
+  table.pv th{color:var(--muted);font-weight:700;font-size:10px;letter-spacing:.6px;text-transform:uppercase}
+  table.pv td.cell{color:var(--primary);font-weight:700}
+  body.dark table.pv td.cell{color:#86efac}
+  table.pv td.lbl{color:var(--muted)} table.pv td.v{color:var(--text);font-weight:600}
+  table.pv td.blank{color:var(--muted);font-style:italic}
+  table.pv tr.miss td.lbl{color:var(--warn-tx)}
+
+  details.box{border-top:1px solid var(--border)} details.box:first-of-type{border-top:0}
+  details.box summary{list-style:none;cursor:pointer;padding:10px 2px;font-family:var(--mono);font-size:11px;
+    letter-spacing:.8px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+  details.box summary::-webkit-details-marker{display:none}
+  details.box summary::before{content:"▸";color:var(--primary);font-size:11px;transition:transform .15s}
+  details.box[open] summary::before{transform:rotate(90deg)}
+  .box-body{padding:2px 2px 14px}
+
+  .map-head,.map-row{display:grid;grid-template-columns:1.1fr 1.3fr .7fr .7fr;gap:9px;align-items:center}
+  .map-head{font-family:var(--mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--muted);padding-bottom:6px}
+  .map-row{padding:8px 0;border-bottom:1px solid var(--border)} .map-row:last-child{border-bottom:0}
+  input[type=text]{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:7px;
+    padding:7px 9px;font-family:var(--mono);font-size:13px;width:100%}
+  input[type=text]:focus,select:focus{outline:0;border-color:var(--primary)}
+  select{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:7px;
+    padding:7px 9px;font-family:var(--mono);font-size:13px;width:100%}
+  .field{display:block;font-size:11px;color:var(--muted);margin:10px 0 5px;font-family:var(--mono);
+    letter-spacing:.4px;text-transform:uppercase}
+  .inline{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:360px}
+
+  .how{font-size:.85rem;color:var(--text)}
+  .how ol{padding-left:18px;margin-top:6px} .how li{margin:4px 0;color:var(--muted)}
+  .how strong{color:var(--text)}
+  .how code{background:var(--bar);border:1px solid var(--border);padding:1px 5px;border-radius:4px;
+    font-family:var(--mono);font-size:.85em;color:var(--text)}
+
+  .quickstart{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:12px}
+  .qs-title{font-family:var(--mono);font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .qs-steps{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+  .qs-step{font-size:.85rem;color:var(--text);line-height:1.6}
+  .qs-n{background:var(--light);color:var(--primary);border:1px solid var(--primary);border-radius:999px;
+    width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:.72rem;font-weight:800;margin-right:8px;vertical-align:middle}
+  body.dark .qs-n{color:#86efac;border-color:#166534;background:#1e2a1e}
+  .qs-step code{background:var(--bar);border:1px solid var(--border);padding:1px 5px;border-radius:4px;
+    font-family:var(--mono);font-size:.82em;color:var(--text)}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="title-block">
+      <h1>⚽ Ariadne → Sheet</h1>
+      <div class="subtitle">Soccer Team · stats converter · v2</div>
+    </div>
+    <div class="head-right">
+      <button class="dark-toggle" id="darkToggle">🌙 Dark</button>
+      <span class="badge">CONVERTER</span>
+    </div>
+  </header>
+
+  <div class="banner">PASTE THE ARIADNE PANEL ONCE — COPY CLEAN BLOCKS STRAIGHT INTO YOUR CELLS</div>
+
+  <div class="quickstart">
+    <div class="qs-title">Quick start</div>
+    <div class="qs-steps">
+      <div class="qs-step"><span class="qs-n">1</span> In Ariadne: expand <b>Advanced Options</b>, copy the whole Algo box</div>
+      <div class="qs-step"><span class="qs-n">2</span> Paste into box 1</div>
+      <div class="qs-step"><span class="qs-n">3</span> Click <b>Copy</b></div>
+      <div class="qs-step"><span class="qs-n">4</span> Click cell <code>B6</code> on the <b>PPP leagues</b> sheet, paste</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 1: PASTE -->
+    <div class="card">
+      <h2><span class="step-num">1</span> Paste from Ariadne <span class="spacer"></span>
+        <button id="clearBtn">Clear</button></h2>
+      <textarea id="input" spellcheck="false" placeholder="Copy the whole Algo box in Ariadne (with Advanced Options expanded) and paste here — preamble (score rate, corners, cards…) and the Supremacy/Expectancy list are all fine."></textarea>
+      <div class="meta" id="parseMeta"></div>
+    </div>
+
+    <!-- 2: COPY -->
+    <div class="card">
+      <h2><span class="step-num">2</span> Copy to your sheet <span class="spacer"></span>
+        <span class="seg" id="modeSeg">
+          <button data-mode="one" class="on">One paste</button>
+          <button data-mode="two">Two pastes</button>
+        </span></h2>
+      <div id="blocks"></div>
+      <div class="pill" id="status"></div>
+      <p class="hint" id="modeHint"></p>
+      <table class="pv" id="preview">
+        <thead><tr><th>Cell</th><th>Field</th><th>Value</th></tr></thead>
+        <tbody id="previewBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3: SETTINGS -->
+  <div class="card">
+    <h2><span class="step-num">3</span> Settings</h2>
+
+    <details class="box">
+      <summary>Number format</summary>
+      <div class="box-body">
+        <span class="field">Decimal separator your sheet expects</span>
+        <div class="seg" id="decSeg">
+          <button data-dec="." class="on">Point&nbsp; 1.5</button>
+          <button data-dec=",">Comma&nbsp; 1,5</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="box">
+      <summary>Cells &amp; mapping</summary>
+      <div class="box-body">
+        <span class="field">Home / Away SR (from “score rate”)</span>
+        <div class="inline">
+          <input type="text" id="homeCell" value="B6" aria-label="Home SR cell">
+          <input type="text" id="awayCell" value="C6" aria-label="Away SR cell">
+        </div>
+
+        <span class="field">Stat rows</span>
+        <div class="map-head"><span>Sheet row</span><span>Reads from Ariadne</span><span>Sup. cell</span><span>Exp. cell</span></div>
+        <div id="mapEditor"></div>
+
+        <span class="field">One-paste header row (re-written so the gap isn’t cleared)</span>
+        <div class="inline" style="max-width:520px;grid-template-columns:90px 1fr 1fr">
+          <input type="text" id="hdrRow" value="7" aria-label="Header row number">
+          <input type="text" id="hdrSup" value="Supremacy" aria-label="Header supremacy text">
+          <input type="text" id="hdrExp" value="Expectancy" aria-label="Header expectancy text">
+        </div>
+
+        <div style="margin-top:14px"><button id="resetMap">Reset to defaults</button></div>
+      </div>
+    </details>
+
+    <details class="box">
+      <summary>How it works</summary>
+      <div class="box-body how">
+        <ol>
+          <li>In Ariadne, expand <strong>Advanced Options</strong> so every category is visible, then copy the whole Algo box and <strong>paste</strong> it into box 1. It reads the two <code>score rate</code> values (Home / Away SR) and the Supremacy/Expectancy list, ignoring everything else.</li>
+          <li><strong>One paste:</strong> click <strong>Copy</strong>, click cell <code>B6</code> on the <strong>PPP leagues</strong> sheet, paste. The whole block (B6:C11) lands at once — row 7 is re-written with the same Supremacy / Expectancy headers, so nothing is lost.</li>
+          <li><strong>Two pastes:</strong> if you'd rather not touch row 7, switch the toggle — one block goes to <code>B6</code>, the other to <code>B8</code>.</li>
+          <li>Missing data is left <strong>blank</strong> (flagged amber in the preview) rather than guessed.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DEFAULTS = {
+    homeCell:"B6", awayCell:"C6",
+    hdrRow:"7", hdrSup:"Supremacy", hdrExp:"Expectancy",
+    rows:[
+      {label:"Shots On Target", key:"shotsontarget",  supCell:"B8",  expCell:"C8"},
+      {label:"Fouls Commited",  key:"foulscommitted", supCell:"B9",  expCell:"C9"},
+      {label:"Total Shots",     key:"shots",          supCell:"B10", expCell:"C10"},
+      {label:"Passes",          key:"passes",         supCell:"B11", expCell:"C11"},
+    ]
+  };
+
+  let state = clone(DEFAULTS);
+  let mode = "one";
+  let decimal = ".";
+  let entries=[], entryMap=new Map(), scoreRates=[];
+  let lastBlocks=[];
+
+  const $ = id => document.getElementById(id);
+  const inputEl=$("input"), blocksEl=$("blocks"), previewBody=$("previewBody"),
+        parseMeta=$("parseMeta"), statusEl=$("status"), modeHint=$("modeHint"), mapEditor=$("mapEditor");
+
+  function clone(o){return JSON.parse(JSON.stringify(o));}
+  function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+  function norm(s){return (s||"").toLowerCase().replace(/[^a-z0-9]/g,"");}
+  const KW=new Set(["supremacy","expectancy","time boost","timeboost"]);
+  const isKeyword=l=>KW.has(l.trim().toLowerCase());
+  const isNumber=l=>/^-?\d+(?:[.,]\d+)?$/.test(l.trim());
+
+  function fmtNum(v){
+    if(v===""||v==null) return "";
+    const t=String(v).trim();
+    if(decimal===","&&/^-?\d+\.\d+$/.test(t)) return t.replace(".",",");
+    if(decimal==="."&&/^-?\d+,\d+$/.test(t)) return t.replace(",",".");
+    return t;
+  }
+
+  function lettersToNum(s){let n=0;for(const ch of s.toUpperCase())n=n*26+(ch.charCodeAt(0)-64);return n;}
+  function numToLetters(n){let s="";while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+  function parseCell(ref){const m=/^([A-Za-z]+)(\d+)$/.exec((ref||"").trim());return m?{col:lettersToNum(m[1]),row:+m[2]}:null;}
+
+  // ---- robust copy: always writes plain text with REAL tabs + newlines ----
+  async function copyText(text){
+    try{
+      if(window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText){
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    }catch(_){ /* fall through */ }
+    return fallbackCopy(text);
+  }
+  function fallbackCopy(text){
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.setAttribute("readonly","");
+    ta.style.cssText="position:fixed;top:-2000px;left:-2000px;opacity:0;";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ ta.setSelectionRange(0, text.length); }catch(_){}
+    let ok=false;
+    try{ ok=document.execCommand("copy"); }catch(_){}
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  // ---- parsing ----
+  function parseScoreRates(lines){
+    const res=[];
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].toLowerCase()==="score rate"){
+        res.push({team:i>0?lines[i-1]:"", val:(i+1<lines.length&&isNumber(lines[i+1]))?lines[i+1]:""});
+      }
+    }
+    return res;
+  }
+  function parseCategories(lines){
+    const out=[]; let nameLines=[]; let i=0;
+    while(i<lines.length){
+      if(lines[i].toLowerCase()==="supremacy"){
+        const name = nameLines.length ? nameLines[nameLines.length-1] : "";
+        nameLines=[];
+        let sup="",exp=""; i++;
+        if(i<lines.length && !isKeyword(lines[i])){ sup=lines[i]; i++; }
+        if(i<lines.length && lines[i].toLowerCase()==="expectancy"){
+          i++; if(i<lines.length && !isKeyword(lines[i])){ exp=lines[i]; i++; }
+        }
+        if(i<lines.length && lines[i].toLowerCase().replace(/\s+/g,"")==="timeboost"){
+          i++; if(i<lines.length && !isKeyword(lines[i]) && isNumber(lines[i])){ i++; }
+        }
+        if(name) out.push({name,normName:norm(name),supremacy:sup,expectancy:exp});
+      } else { nameLines.push(lines[i]); i++; }
+    }
+    return out;
+  }
+
+  // ---- targets / values ----
+  function targets(){
+    const out=[];
+    const hc=parseCell(state.homeCell), ac=parseCell(state.awayCell);
+    if(hc) out.push({col:hc.col,row:hc.row,type:"sr",idx:0,field:"Home SR"});
+    if(ac) out.push({col:ac.col,row:ac.row,type:"sr",idx:1,field:"Away SR"});
+    state.rows.forEach(r=>{
+      const sc=parseCell(r.supCell), ec=parseCell(r.expCell);
+      if(sc) out.push({col:sc.col,row:sc.row,type:"sup",key:r.key,field:r.label,sub:"Sup"});
+      if(ec) out.push({col:ec.col,row:ec.row,type:"exp",key:r.key,field:r.label,sub:"Exp"});
+    });
+    return out;
+  }
+  function valueFor(t){
+    if(t.type==="sr"){ const sr=scoreRates[t.idx]; return sr?sr.val:""; }
+    const e=entryMap.get(t.key); if(!e) return "";
+    return t.type==="sup"? e.supremacy : e.expectancy;
+  }
+
+  // ---- blocks (contiguous rectangles) ----
+  function buildBlocks(placements){
+    if(!placements.length) return [];
+    const byRow=new Map(); let minCol=Infinity,maxCol=-Infinity;
+    placements.forEach(p=>{
+      minCol=Math.min(minCol,p.col); maxCol=Math.max(maxCol,p.col);
+      if(!byRow.has(p.row)) byRow.set(p.row,new Map());
+      byRow.get(p.row).set(p.col,p.val);
+    });
+    const rowsSorted=[...byRow.keys()].sort((a,b)=>a-b);
+    const runs=[]; let cur=[];
+    rowsSorted.forEach((r,idx)=>{ if(idx>0 && r!==rowsSorted[idx-1]+1){runs.push(cur);cur=[];} cur.push(r); });
+    if(cur.length) runs.push(cur);
+    return runs.map(run=>{
+      const matrix=run.map(r=>{
+        const rm=byRow.get(r), cells=[];
+        for(let c=minCol;c<=maxCol;c++) cells.push(fmtNum(rm.has(c)?rm.get(c):""));
+        return cells;
+      });
+      const tsv=matrix.map(row=>row.join("\t")).join("\n");   // REAL tabs + newlines
+      return {anchor:numToLetters(minCol)+run[0], matrix, tsv, rows:run.length, cols:maxCol-minCol+1};
+    });
+  }
+
+  // ---- render ----
+  function render(){
+    const ts=targets();
+    const placements=ts.map(t=>({col:t.col,row:t.row,val:valueFor(t)}));
+    if(mode==="one"){
+      const hr=parseInt(state.hdrRow,10);
+      const hc=parseCell(state.homeCell), ac=parseCell(state.awayCell);
+      if(hr && hc) placements.push({col:hc.col,row:hr,val:state.hdrSup});
+      if(hr && ac) placements.push({col:ac.col,row:hr,val:state.hdrExp});
+    }
+    lastBlocks=buildBlocks(placements);
+
+    blocksEl.innerHTML="";
+    if(!inputEl.value.trim()){
+      blocksEl.innerHTML='<div class="hint">Paste a panel in box 1 to see your copy blocks.</div>';
+    } else {
+      const hr=parseInt(state.hdrRow,10);
+      lastBlocks.forEach((b,i)=>{
+        const div=document.createElement("div"); div.className="block";
+        let rowsHtml="";
+        b.matrix.forEach((row, ri)=>{
+          const isHdr = (mode==="one") && b.rows>1 &&
+                        ( (parseCell(b.anchor).row + ri) === hr );
+          rowsHtml += `<tr${isHdr?' class="hdr"':''}>` + row.map(c=>
+            c===""? '<td class="bl">&nbsp;</td>' : `<td>${esc(c)}</td>`
+          ).join("") + `</tr>`;
+        });
+        div.innerHTML=`
+          <div class="block-head">
+            <span class="anchor">Paste at <b>${b.anchor}</b> <span class="dim">· ${b.rows}×${b.cols}</span></span>
+            <button class="copy" data-i="${i}">Copy</button>
+          </div>
+          <table class="bt"><tbody>${rowsHtml}</tbody></table>`;
+        blocksEl.appendChild(div);
+      });
+    }
+
+    previewBody.innerHTML="";
+    let missing=0;
+    ts.forEach(t=>{
+      const v=fmtNum(valueFor(t));
+      const tr=document.createElement("tr");
+      const found=v!=="";
+      if(!found){ tr.className="miss"; missing++; }
+      const sub=t.sub?(" — "+t.sub):"";
+      let extra="";
+      if(t.type==="sr"){ const sr=scoreRates[t.idx]; if(sr&&sr.team) extra=' <span class="dim">('+esc(sr.team)+')</span>'; }
+      tr.innerHTML=`<td class="cell">${esc(numToLetters(t.col)+t.row)}</td>`+
+                   `<td class="lbl">${esc(t.field+sub)}${extra}</td>`+
+                   (found?`<td class="v">${esc(v)}</td>`:`<td class="blank">(blank)</td>`);
+      previewBody.appendChild(tr);
+    });
+
+    parseMeta.innerHTML="";
+    if(inputEl.value.trim()){
+      addChip(`${entries.length} categories read`, entries.length?"good":"warn");
+      if(scoreRates.length) addChip(`score rate ×${scoreRates.length}`,"good");
+      if(missing) addChip(`${missing} cell${missing>1?"s":""} blank`,"warn");
+    }
+    modeHint.textContent = mode==="one"
+      ? "One block. Click Copy, click cell "+state.homeCell+" in your sheet, paste. Row "+state.hdrRow+" is re-written with your headers (same text)."
+      : "Two blocks. Copy each and paste at the cell shown — row "+state.hdrRow+" is left untouched.";
+    clearPill();
+  }
+  function addChip(text,kind){const s=document.createElement("span");s.className="chip"+(kind?" "+kind:"");s.textContent=text;parseMeta.appendChild(s);}
+
+  // ---- mapping editor ----
+  function optsHTML(sel){
+    let h='<option value="">— none —</option>';
+    entries.forEach(e=>h+=`<option value="${e.normName}"${e.normName===sel?" selected":""}>${esc(e.name)}</option>`);
+    if(sel && !entries.some(e=>e.normName===sel)) h+=`<option value="${sel}" selected>${esc(sel)} (not found)</option>`;
+    return h;
+  }
+  function renderMap(){
+    mapEditor.innerHTML="";
+    state.rows.forEach((r,i)=>{
+      const row=document.createElement("div"); row.className="map-row";
+      row.innerHTML=`
+        <input type="text" value="${esc(r.label)}" data-i="${i}" data-f="label">
+        <select data-i="${i}" data-f="key">${optsHTML(r.key)}</select>
+        <input type="text" value="${esc(r.supCell)}" data-i="${i}" data-f="supCell">
+        <input type="text" value="${esc(r.expCell)}" data-i="${i}" data-f="expCell">`;
+      mapEditor.appendChild(row);
+    });
+  }
+  mapEditor.addEventListener("input",e=>{
+    const t=e.target,i=+t.dataset.i,f=t.dataset.f; if(!state.rows[i])return;
+    state.rows[i][f]=t.value; render();
+  });
+
+  // ---- inputs ----
+  function refresh(){
+    const lines=inputEl.value.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length);
+    entries=parseCategories(lines);
+    entryMap=new Map(); entries.forEach(e=>entryMap.set(e.normName,e));
+    scoreRates=parseScoreRates(lines);
+    renderMap(); render();
+  }
+  inputEl.addEventListener("input",refresh);
+  $("clearBtn").addEventListener("click",()=>{inputEl.value="";refresh();inputEl.focus();});
+
+  ["homeCell","awayCell","hdrRow","hdrSup","hdrExp"].forEach(id=>{
+    $(id).addEventListener("input",()=>{state[id]=$(id).value;render();});
+  });
+
+  $("modeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    mode=b.dataset.mode; document.querySelectorAll("#modeSeg button").forEach(x=>x.classList.toggle("on",x===b)); render();});
+  $("decSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    decimal=b.dataset.dec; document.querySelectorAll("#decSeg button").forEach(x=>x.classList.toggle("on",x===b)); render();});
+
+  $("resetMap").addEventListener("click",()=>{
+    state=clone(DEFAULTS);
+    $("homeCell").value=state.homeCell; $("awayCell").value=state.awayCell;
+    $("hdrRow").value=state.hdrRow; $("hdrSup").value=state.hdrSup; $("hdrExp").value=state.hdrExp;
+    renderMap(); render();
+  });
+
+  // ---- copy handler ----
+  blocksEl.addEventListener("click", async e=>{
+    const btn=e.target.closest(".copy"); if(!btn) return;
+    const b=lastBlocks[+btn.dataset.i]; if(!b||!b.tsv){ pill("Nothing to copy yet.",true); return; }
+    const ok=await copyText(b.tsv);
+    pill(ok ? `✅ Copied ${b.rows}×${b.cols} — click ${b.anchor} in your sheet, then paste.`
+            : "⚠️ Couldn't reach the clipboard — select the grid and press Ctrl/Cmd+C.", !ok);
+  });
+  function pill(msg,err){statusEl.className="pill "+(err?"err":"ok");statusEl.textContent=msg;}
+  function clearPill(){statusEl.className="pill";statusEl.textContent="";}
+
+  // ---- dark mode ----
+  const darkToggle=$("darkToggle");
+  function applyDark(on){ document.body.classList.toggle("dark",on); darkToggle.textContent = on?"☀️ Light":"🌙 Dark"; }
+  let saved=null; try{ saved=localStorage.getItem("a2sDark"); }catch(_){}
+  if(saved==="1") applyDark(true);
+  else if(saved==null && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) applyDark(true);
+  darkToggle.addEventListener("click",()=>{
+    const on=!document.body.classList.contains("dark");
+    applyDark(on);
+    try{ localStorage.setItem("a2sDark", on?"1":"0"); }catch(_){}
+  });
+
+  // init
+  renderMap(); render();
+})();
+</script>
+</body>
+</html>
